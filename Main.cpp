@@ -1,20 +1,45 @@
 #include <iostream>
 #include "libs/EdubotLib.hpp"
+#include <cmath> 
 
 //Velocidad
-#define SPEED 0.1
+#define SPEED 0.5
 
 //Timeout cuando va en la direccion correcta
-#define TIMEOUT 10
+#define TIMEOUT 100
 
 //Timeout de giro
-#define TURNTIMEOUT 1600
+#define TURNTIMEOUT 2000
 
-//Timeout de avance post-giro (para avanzar un casillero completo)
-#define POSTTURNTIMEOUT 4120
+//Largo ded cada casillero
+#define LENGTH 0.37
 
 
 using namespace std;
+
+void advanceSquare(double length, EdubotLib*& edubotLib, double speed){
+	double startX=edubotLib->getX();
+	double startY=edubotLib->getY();
+	double startTheta=edubotLib->getTheta();
+
+	//Caso 1: movimiento vertical
+	if(startTheta==90 || startTheta==270){
+		edubotLib->move(SPEED);
+		while(abs(startY-edubotLib->getY()) < length){
+		}
+		edubotLib->stop();
+		edubotLib->sleepMilliseconds(50);
+	}
+	else{
+		edubotLib->move(SPEED);
+		while(abs(startX-edubotLib->getX()) < length){
+		}
+		edubotLib->stop();
+		edubotLib->sleepMilliseconds(50);
+	}
+	
+	
+}
 
 
 int main(){
@@ -30,46 +55,41 @@ int main(){
 			//Yendo en la direccion correcta
 			if(turnCounter==targetDir){
 				//Si no hay obstaculos
-				if(edubotLib->getSonar(3)>0.05){
-					edubotLib->move(SPEED);
+				if(edubotLib->getSonar(3)>0.4){
+					advanceSquare(LENGTH,edubotLib,SPEED);
 					edubotLib->sleepMilliseconds(TIMEOUT);
-					edubotLib->stop();
 				}
 			//Priorizar derecha
-				else if(edubotLib->getSonar(6)>0.3){
+				else if(edubotLib->getSonar(6)>0.4){
 						edubotLib->rotate(90);
 						edubotLib->sleepMilliseconds(TURNTIMEOUT);
 						turnCounter += 1;
-						edubotLib->move(SPEED);
-						edubotLib->sleepMilliseconds(POSTTURNTIMEOUT);
-						edubotLib->stop();
+						advanceSquare(LENGTH,edubotLib,SPEED);
+						edubotLib->sleepMilliseconds(TIMEOUT);
 					}
 			}
 			//Si va en otra direccion
 			else{
 				//Priorizar derecha
-				if(edubotLib->getSonar(6)>0.3){
+				if(edubotLib->getSonar(6)>0.4){
 					edubotLib->rotate(90);
 					edubotLib->sleepMilliseconds(TURNTIMEOUT);
 					turnCounter += 1;
-					edubotLib->move(SPEED);
-					edubotLib->sleepMilliseconds(POSTTURNTIMEOUT);
-					edubotLib->stop();
+					advanceSquare(LENGTH,edubotLib,SPEED);
+					edubotLib->sleepMilliseconds(TIMEOUT);
 				}
 				//Si la derecha esta bloqueada, probar izquierda
-				else if(edubotLib->getSonar(0)>0.3){
+				else if(edubotLib->getSonar(0)>0.4){
 					edubotLib->rotate(-90);
 					edubotLib->sleepMilliseconds(TURNTIMEOUT);
 					turnCounter -= 1;
-					edubotLib->move(SPEED);
-					edubotLib->sleepMilliseconds(POSTTURNTIMEOUT);
-					edubotLib->stop();
+					advanceSquare(LENGTH,edubotLib,SPEED);
+					edubotLib->sleepMilliseconds(TIMEOUT);
 				}
 				//Si no hay alternativa (pasillo), avanzar
 				else{
-					edubotLib->move(SPEED);
-					edubotLib->sleepMilliseconds(POSTTURNTIMEOUT);
-					edubotLib->stop();
+					advanceSquare(LENGTH,edubotLib,SPEED);
+					edubotLib->sleepMilliseconds(TIMEOUT);
 				}
 			}
 
@@ -84,3 +104,4 @@ int main(){
 	
 	return 0;
 }
+
