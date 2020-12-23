@@ -1,45 +1,69 @@
 #include <iostream>
 #include "libs/EdubotLib.hpp"
-#include <cmath> 
 
 //Velocidad
 #define SPEED 0.5
 
 //Timeout cuando va en la direccion correcta
-#define TIMEOUT 100
+#define TIMEOUT 20
 
 //Timeout de giro
-#define TURNTIMEOUT 2000
+#define TURNTIMEOUT 1600
 
-//Largo ded cada casillero
-#define LENGTH 0.37
+//Timeout de avance post-giro (para avanzar un casillero completo)
+#define POSTTURNTIMEOUT 4120
 
+//Distancia minima a la pared
+#define DISTANCE 0.3
 
 using namespace std;
 
-void advanceSquare(double length, EdubotLib*& edubotLib, double speed){
-	double startX=edubotLib->getX();
-	double startY=edubotLib->getY();
-	double startTheta=edubotLib->getTheta();
-
-	//Caso 1: movimiento vertical
-	if(startTheta==90 || startTheta==270){
-		edubotLib->move(SPEED);
-		while(abs(startY-edubotLib->getY()) < length){
+void advance(int sonar, double speed, double distance, double timeout, EdubotLib*& edubotLib,bool hallway){
+	edubotLib->move(speed);
+	while(edubotLib->getSonar(sonar)<=distance){
+		}
+	//Caso 1: está avanzando hacia la dirección
+	if(sonar==3){
+		//edubotLib->stop();
+	}
+	//Caso 2: despejar pasillo
+	else if(hallway==true){
+		//Caso 2.1: pasillo vertical
+		if(edubotLib->getTheta() == 90 || edubotLib->getTheta() == 270){
+			double startY = edubotLib->getY();
+			edubotLib->move(speed);
+			while(abs(startY-edubotLib->getY()) <= 0.13){
+			}
+			edubotLib->stop();
+		}
+		//Caso 2.2: pasillo horizontal
+		else{
+			double startX = edubotLib->getX();
+			edubotLib->move(SPEED);
+			while(abs(startX-edubotLib->getX()) <= 0.13){
+			}
+			edubotLib->stop();
+		}
+	}
+	//Caso 3: Despejar una esquina vertical
+	else if(edubotLib->getTheta() == 90 || edubotLib->getTheta() == 270){
+		double startY = edubotLib->getY();
+		edubotLib->move(speed);
+		while(abs(startY-edubotLib->getY()) <= 0.35){
 		}
 		edubotLib->stop();
-		edubotLib->sleepMilliseconds(50);
 	}
+	//Caso 5: Despejar esquina horizontal
 	else{
+		double startX = edubotLib->getX();
 		edubotLib->move(SPEED);
-		while(abs(startX-edubotLib->getX()) < length){
+		while(abs(startX-edubotLib->getX()) <= 0.35){
 		}
 		edubotLib->stop();
-		edubotLib->sleepMilliseconds(50);
 	}
-	
-	
+	edubotLib->sleepMilliseconds(timeout);
 }
+
 
 
 int main(){
@@ -55,41 +79,36 @@ int main(){
 			//Yendo en la direccion correcta
 			if(turnCounter==targetDir){
 				//Si no hay obstaculos
-				if(edubotLib->getSonar(3)>0.4){
-					advanceSquare(LENGTH,edubotLib,SPEED);
-					edubotLib->sleepMilliseconds(TIMEOUT);
+				if(edubotLib->getSonar(3)>0.1){
+					advance(3,SPEED,0.1,TIMEOUT,edubotLib,false);
 				}
 			//Priorizar derecha
-				else if(edubotLib->getSonar(6)>0.4){
+				else if(edubotLib->getSonar(6)>0.3){
 						edubotLib->rotate(90);
 						edubotLib->sleepMilliseconds(TURNTIMEOUT);
 						turnCounter += 1;
-						advanceSquare(LENGTH,edubotLib,SPEED);
-						edubotLib->sleepMilliseconds(TIMEOUT);
+						advance(6,SPEED,DISTANCE,TIMEOUT,edubotLib,false);
 					}
 			}
 			//Si va en otra direccion
 			else{
 				//Priorizar derecha
-				if(edubotLib->getSonar(6)>0.4){
+				if(edubotLib->getSonar(6)>0.3){
 					edubotLib->rotate(90);
 					edubotLib->sleepMilliseconds(TURNTIMEOUT);
 					turnCounter += 1;
-					advanceSquare(LENGTH,edubotLib,SPEED);
-					edubotLib->sleepMilliseconds(TIMEOUT);
+					advance(6,SPEED,DISTANCE,TIMEOUT,edubotLib,false);
 				}
 				//Si la derecha esta bloqueada, probar izquierda
-				else if(edubotLib->getSonar(0)>0.4){
+				else if(edubotLib->getSonar(0)>0.3){
 					edubotLib->rotate(-90);
 					edubotLib->sleepMilliseconds(TURNTIMEOUT);
 					turnCounter -= 1;
-					advanceSquare(LENGTH,edubotLib,SPEED);
-					edubotLib->sleepMilliseconds(TIMEOUT);
+					advance(0,SPEED,DISTANCE,TIMEOUT,edubotLib,false);
 				}
 				//Si no hay alternativa (pasillo), avanzar
 				else{
-					advanceSquare(LENGTH,edubotLib,SPEED);
-					edubotLib->sleepMilliseconds(TIMEOUT);
+					advance(6,SPEED,DISTANCE,TIMEOUT,edubotLib,true);
 				}
 			}
 
@@ -104,4 +123,3 @@ int main(){
 	
 	return 0;
 }
-
