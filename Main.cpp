@@ -19,6 +19,8 @@
 using namespace std;
 
 void advance(int sonar, double speed, double distance, double timeout, EdubotLib*& edubotLib,bool hallway){
+	bool collision = false;
+	
 	edubotLib->move(speed);
 	while(edubotLib->getSonar(sonar)<=distance){
 		}
@@ -32,7 +34,8 @@ void advance(int sonar, double speed, double distance, double timeout, EdubotLib
 		if(edubotLib->getTheta() == 90 || edubotLib->getTheta() == 270){
 			double startY = edubotLib->getY();
 			edubotLib->move(speed);
-			while(abs(startY-edubotLib->getY()) <= 0.13){
+			while((abs(startY-edubotLib->getY()) <= 0.13) && (collision == false)){
+				collision = (edubotLib->getBumper(0)==true || edubotLib->getBumper(1)==true || edubotLib->getBumper(2)==true || edubotLib->getBumper(3)==true);
 			}
 			edubotLib->stop();
 		}
@@ -40,7 +43,8 @@ void advance(int sonar, double speed, double distance, double timeout, EdubotLib
 		else{
 			double startX = edubotLib->getX();
 			edubotLib->move(SPEED);
-			while(abs(startX-edubotLib->getX()) <= 0.13){
+			while((abs(startX-edubotLib->getX()) <= 0.13) && (collision == false)){
+				collision = (edubotLib->getBumper(0)==true || edubotLib->getBumper(1)==true || edubotLib->getBumper(2)==true || edubotLib->getBumper(3)==true);
 			}
 			edubotLib->stop();
 		}
@@ -49,7 +53,8 @@ void advance(int sonar, double speed, double distance, double timeout, EdubotLib
 	else if(edubotLib->getTheta() == 90 || edubotLib->getTheta() == 270){
 		double startY = edubotLib->getY();
 		edubotLib->move(speed);
-		while(abs(startY-edubotLib->getY()) <= 0.35){
+		while((abs(startY-edubotLib->getY()) <= 0.35) && (collision == false)){
+			collision = (edubotLib->getBumper(0)==true || edubotLib->getBumper(1)==true || edubotLib->getBumper(2)==true || edubotLib->getBumper(3)==true);
 		}
 		edubotLib->stop();
 	}
@@ -57,25 +62,74 @@ void advance(int sonar, double speed, double distance, double timeout, EdubotLib
 	else{
 		double startX = edubotLib->getX();
 		edubotLib->move(SPEED);
-		while(abs(startX-edubotLib->getX()) <= 0.35){
+		while((abs(startX-edubotLib->getX()) <= 0.35) && (collision == false)){
+			collision = (edubotLib->getBumper(0)==true || edubotLib->getBumper(1)==true || edubotLib->getBumper(2)==true || edubotLib->getBumper(3)==true);
 		}
 		edubotLib->stop();
 	}
 	edubotLib->sleepMilliseconds(timeout);
 }
 
+void fixPos(EdubotLib*& edubotLib){
+	//Obtener bumpers
+	bool bumper0 = edubotLib->getBumper(0);
+	bool bumper1 = edubotLib->getBumper(1);
+	bool bumper2 = edubotLib->getBumper(2);
+	bool bumper3 = edubotLib->getBumper(3);
 
+	//Angulo actual
+	double angle = edubotLib->getTheta();
+	
+	//Caso 1: choque frontal
+	if(bumper1==true && bumper2 == true){
+		//Mover hacia atras
+		edubotLib->move(-0.5);
+		edubotLib->sleepMilliseconds(500);
+		edubotLib->stop();
+	}
+	//Caso 2
+	else if(bumper0==true || bumper3==true){
+		edubotLib->move(0.5);
+		edubotLib->sleepMilliseconds(500);
+		edubotLib->sleepMilliseconds(1200);
+	}
+	else{
+		edubotLib->move(-0.5);
+		edubotLib->sleepMilliseconds(500);
+		edubotLib-> rotate(12);
+		edubotLib->sleepMilliseconds(1200);
+	}
+	
+	
+	
+}
 
 int main(){
 	EdubotLib *edubotLib = new EdubotLib();
 
 	//Variables
 	int turnCounter = 0;
-	int targetDir = 2;
+	int targetDir = 0;
 
 	//Conectar robot
 	if(edubotLib->connect()){
 		while(edubotLib->isConnected()){
+			//Chequear colisiones y corregir
+			bool bumper0 = edubotLib->getBumper(0);
+			bool bumper1 = edubotLib->getBumper(1);
+			bool bumper2 = edubotLib->getBumper(2);
+			bool bumper3 = edubotLib->getBumper(3);
+
+			std::cout << "Bumper 0: " << bumper0 <<std::endl;
+			std::cout << "Bumper 1: " << bumper1 <<std::endl;
+			std::cout << "Bumper 2: " << bumper2 <<std::endl;
+			std::cout << "Bumper 3: " << bumper3 <<std::endl;
+			
+			if(bumper0 == true || bumper1 == true || bumper2 == true || bumper3 == true){
+			   	std::cout << "BUMP!" <<std::endl;
+			   	fixPos(edubotLib);
+			   }
+			
 			//Yendo en la direccion correcta
 			if(turnCounter==targetDir){
 				//Si no hay obstaculos
@@ -113,6 +167,9 @@ int main(){
 			}
 
 			std::cout << "Contador de giro: " << turnCounter <<std::endl;
+
+			
+			
 			}
 
 		
